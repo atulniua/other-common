@@ -1,5 +1,5 @@
 {
-  "key": "advservice-receipt",
+  "key": "petservice-receipt",
   "config": {
     "defaultStyle": {
       "font": "Cambay"
@@ -143,7 +143,7 @@
                 "style": "receipt-table-value"
               },
               {
-                "text": "ADV SERVICES",
+                "text": "{{serviceType}}",
                 "border": [false, true, false, false],
                 "style": "receipt-table"
               },
@@ -270,7 +270,7 @@
                 "style": "receipt-table-value-down"
               },
               {
-                "image": "{{qrcodeImage}}",
+                "image": "{{qrcodeimage}}",
                 "style": "receipt-table-value-total-Qr",
                 "border": [false, true, true, true],
                 "width": 72,
