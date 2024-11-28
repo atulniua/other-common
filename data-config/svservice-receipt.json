@@ -1,0 +1,217 @@
+{
+  "key": "svservice-receipt",
+  "DataConfigs": {
+    "serviceName": "rainmaker-common",
+    "version": "1.0.0",
+    "baseKeyPath": "$.Payments.*",
+    "entityIdPath": "$.id",
+    "isCommonTableBorderRequired": true,
+    "mappings": [
+      {
+        "topic": "common-pdf-generation-3",
+        "mappings": [
+          {
+            "direct": [
+              {
+                "variable": "payerName",
+                "value": {
+                  "path": "$.payerName"
+                }
+              },
+              {
+                "variable": "ConsumerId",
+                "value": {
+                  "path": "$.paymentDetails[0].bill.consumerCode"
+                }
+              },
+              {
+                "variable": "user-name",
+                "value": {
+                  "path": "$.userInfo.name"
+                },
+                "type": "selectFromRequestInfo"
+              },
+              {
+                "variable": "payerContact",
+                "value": {
+                  "path": "$.paymentDetails[0].bill.mobileNumber"
+                }
+              },
+              {
+                "variable": "paymentStatus",
+                "value": {
+                  "path": "$.paymentStatus"
+                },
+                "localisation": {
+                  "required": true,
+                  "prefix": null,
+                  "module": "rainmaker-common"
+                }
+              },
+              {
+                "variable": "receiptNo",
+                "value": {
+                  "path": "$.paymentDetails[0].receiptNumber"
+                }
+              },
+              {
+                "variable": "Payment Date",
+                "value": {
+                  "path": "$.transactionDate"
+                }
+              },
+              {
+                "variable": "serviceType",
+                "value": {
+                  "path": "$.paymentDetails[0].businessService"
+                },
+                "localisation": {
+                  "required": true,
+                  "module": "rainmaker-common"
+                }
+              },
+              {
+                "variable": "total_amount",
+                "value": {
+                  "path": "PDF_STATIC_LABEL_CONSOLIDATED_TLAPP_TOTAL_AMOUNT"
+                },
+                "type": "label",
+                "localisation": {
+                  "required": true,
+                  "prefix": null,
+                  "module": "rainmaker-common"
+                }
+              },
+              {
+                "variable": "totalAmount",
+                "value": {
+                  "path": "$.totalAmountPaid"
+                }
+              },
+              {
+                "variable": "tenantid",
+                "value": {
+                  "path": "$.tenantId"
+                }
+              },
+              {
+                "variable": "paidAmount",
+                "value": {
+                  "path": "$.paymentDetails[0].totalAmountPaid"
+                }
+              },
+              {
+                "variable": "geneartedby",
+                "value": {
+                  "path": "PDF_STATIC_LABEL_CONSOLIDATED_RECEIPT_GENERATED_BY"
+                },
+                "type": "label",
+                "localisation": {
+                  "required": true,
+                  "prefix": null,
+                  "module": "rainmaker-common"
+                }
+              },
+              {
+                "variable": "paymentMode",
+                "value": {
+                  "path": "$.paymentMode"
+                },
+                "localisation": {
+                  "required": true,
+                  "prefix": "COMMON_MASTERS_PAYMENTMODE",
+                  "module": "rainmaker-common"
+                }
+              }
+            ]
+          },
+          {
+            "qrcodeConfig": [
+              {
+                "variable": "qrcodeImage",
+                "value": "digit-ui/citizen/payment/verification?tenantId={{tenantid}}&receiptNumber={{receiptNo}}"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "externalAPI": [
+      {
+        "path": "http://localhost:8082/egov-mdms-service/v1/_get",
+        "queryParam": "moduleName=tenant&masterName=tenants&tenantId=pg&filter=%5B?(@.code=='{$.tenantId}')%5D",
+        "apiRequest": null,
+        "responseMapping": [
+          {
+            "variable": "address",
+            "value": "$.MdmsRes.tenant.tenants[0].address"
+          },
+          {
+            "variable": "phoneNumber",
+            "value": "$.MdmsRes.tenant.tenants[0].contactNumber"
+          },
+          {
+            "variable": "website",
+            "value": "$.MdmsRes.tenant.tenants[0].domainUrl"
+          },
+          {
+            "variable": "email",
+            "value": "$.MdmsRes.tenant.tenants[0].emailId"
+          },
+          {
+            "variable": "logoImage",
+            "value": "https://raw.githubusercontent.com/egovernments/egov-web-app/master/web/rainmaker/dev-packages/egov-ui-kit-dev/src/assets/images/pblogo.png",
+            "type": "image"
+          },
+          {
+            "variable": "logo-header",
+            "value": "$.MdmsRes.tenant.tenants[0].code",
+            "localisation": {
+              "required": true,
+              "prefix": "TENANT_TENANTS",
+              "module": "rainmaker-common"
+            }
+          }
+        ]
+      },
+      {
+        "path": "http://localhost:8043/sv-services/street-vending/_search",
+        "queryParam": "tenantId=pg.citya",
+        "apiRequest": null,
+        "responseMapping": [
+          {
+            "variable": "payerName",
+            "value": "$.payerName"
+          }
+        ]
+      },
+      {
+        "path": "http://localhost:8082/egov-mdms-service/v1/_get",
+        "queryParam": "moduleName=tenant&masterName=footer&tenantId=pg&filter=%5B?(@.code=='{$.tenantId}' %26%26 @.service=='{$.paymentDetails[0].businessService}')%5D",
+        "apiRequest": null,
+        "responseMapping": [
+          {
+            "variable": "variable11",
+            "value": "$.MdmsRes.tenant.footer[0].receiptFooterContent.*",
+            "type": "array",
+            "format": {
+              "type": "string",
+              "scema": [
+                {
+                  "variable": "disclaimerContent",
+                  "value": "disclaimer",
+                  "type": "string",
+                  "localisation": {
+                    "required": true,
+                    "prefix": null,
+                    "module": "rainmaker-common"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
