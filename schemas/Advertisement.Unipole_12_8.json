@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Generated schema for Root",
+  "type": "object",
+  "properties": {
+    "imageSrc": {
+      "type": "string"
+    },
+    "light": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "location": {
+      "type": "string"
+    },
+    "adtype": {
+      "type": "string"
+    },
+    "faceArea": {
+      "type": "string"
+    },
+    "poleNo": {
+      "type": "string"
+    },
+    "price": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "imageSrc",
+    "light",
+    "title",
+    "location",
+    "adtype",
+    "faceArea",
+    "poleNo",
+    "price"
+  ],
+  "x-unique": ["location","faceArea"],
+    "x-ref-schema": [
+    {
+      "fieldPath": "faceArea",
+      "schemaCode": "Advertisement.FaceArea"
+    }
+  ]
+}

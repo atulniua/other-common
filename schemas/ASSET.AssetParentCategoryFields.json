@@ -1,0 +1,92 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Generated schema for Root",
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "parent": {},
+      "assetParentCategory": {
+        "type": "string"
+      },
+      "fields": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "code": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string"
+            },
+            "isMandatory": {
+              "type": "boolean"
+            },
+            "active": {
+              "type": "boolean"
+            },
+            "options": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "i18nKey": {
+                    "type": "string"
+                  },
+                  "code": {
+                    "type": "string"
+                  },
+                  "value": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "name",
+                  "i18nKey",
+                  "code",
+                  "value"
+                ]
+              }
+            },
+            "value": {
+              "type": "string"
+            },
+            "onChange": {
+              "type": "string"
+            },
+            "columnType": {
+              "type": "string"
+            },
+            "addCurrentLocationButton": {
+              "type": "boolean"
+            },
+            "isReadOnly": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "name",
+            "code",
+            "type",
+            "isMandatory",
+            "active"
+          ]
+        }
+      }
+    },
+    "x-unique":["id"],
+    "required": [
+      "id",
+      "assetParentCategory",
+      "fields"
+      
+    ]
+  }

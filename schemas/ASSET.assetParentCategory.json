@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "code": {
+      "type": "string"
+    },
+    "active": {
+      "type": "boolean"
+    },
+    "assetClassification": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "required": ["name", "code", "active", "assetClassification"],
+  "x-unique": ["code"],
+  "x-ref-schema": [
+    {
+      "fieldPath": "assetClassification",
+      "schemaCode": "ASSET.assetClassification"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "applicationType": {
+      "type": "string"
+    },
+    "serviceType": {
+      "type": "string"
+    },
+    "feeType": {
+      "type": "string"
+    },
+    "rate": {
+      "type": "number"
+    }
+  },
+  "additionalProperties": false,
+  "required": ["applicationType", "serviceType", "feeType", "rate"],
+  "x-unique": ["feeType"]
+}

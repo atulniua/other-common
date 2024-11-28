@@ -1,0 +1,96 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Generated schema for Root",
+    "type": "object",
+    "properties": {
+      "tenantId": {
+        "type": "string"
+      },
+      "businessService": {
+        "type": "string"
+      },
+      "business": {
+        "type": "string"
+      },
+      "businessServiceSla": {
+        "type": "number"
+      },
+      "states": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "sla": {
+                "type": ["null","string"]
+            },
+            "state": {
+              "type": ["null","string"]
+            },
+            "applicationStatus": {
+              "type": ["null","string"]
+            },
+            "docUploadRequired": {
+              "type": "boolean"
+            },
+            "isStartState": {
+              "type": "boolean"
+            },
+            "isTerminateState": {
+              "type": "boolean"
+            },
+            "isStateUpdatable": {
+              "type": "boolean"
+            },
+            "actions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "action": {
+                    "type": "string"
+                  },
+                  "nextState": {
+                    "type": "string"
+                  },
+                  "roles": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "active": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "action",
+                  "nextState",
+                  "roles",
+                  "active"
+                ]
+              }
+            }
+          },
+          "required": [
+            "sla",
+            "docUploadRequired",
+            "isStartState",
+            "isTerminateState",
+            "isStateUpdatable",
+            "actions"
+          ]
+        }
+      }
+    },
+    "required": [
+      "tenantId",
+      "businessService",
+      "business",
+      "businessServiceSla",
+      "states"
+    ],
+    "x-unique":[
+        "businessService",
+        "business"
+    ]
+  }
