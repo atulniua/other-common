@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Generated schema for Root",
+  "type": "object",
+  "properties": {
+    "applicationType": {
+      "type": "string"
+    },
+    "serviceType": {
+      "type": "string"
+    },
+    "feeType": {
+      "type": "string"
+    },
+    "amount": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "applicationType",
+    "serviceType",
+    "feeType",
+    "amount"
+  ],
+  "x-unique": ["applicationType","serviceType"]
+}
