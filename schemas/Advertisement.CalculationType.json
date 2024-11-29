@@ -1,0 +1,80 @@
+{
+   "$schema": "http://json-schema.org/draft-07/schema#",
+   "type": "object",
+   "properties": {
+      "location": {
+         "type": "string"
+      },
+      "CalculationType_UNIPOLE_12_X_8": {
+         "type": "array",
+         "items": {
+            "type": "object",
+            "properties": {
+               "applicationType": {
+                  "type": "string"
+               },
+               "serviceType": {
+                  "type": "string"
+               },
+               "feeType": {
+                  "type": "string"
+               },
+               "amount": {
+                  "type": "integer"
+               },
+               "taxApplicable": {
+                  "type": "boolean"
+               }
+            },
+            "required": [
+               "applicationType",
+               "serviceType",
+               "feeType",
+               "amount",
+               "taxApplicable"
+            ],
+            "additionalProperties": false
+         }
+      },
+      "CalculationType_UNIPOLE_18_X_8": {
+         "type": "array",
+         "items": {
+            "type": "object",
+            "properties": {
+               "applicationType": {
+                  "type": "string"
+               },
+               "serviceType": {
+                  "type": "string"
+               },
+               "feeType": {
+                  "type": "string"
+               },
+               "amount": {
+                  "type": "integer"
+               },
+               "taxApplicable": {
+                  "type": "boolean"
+               }
+            },
+            "required": [
+               "applicationType",
+               "serviceType",
+               "feeType",
+               "amount",
+               "taxApplicable"
+            ],
+            "additionalProperties": false
+         }
+      }
+   },
+   "additionalProperties": false,
+   "required": [
+      "location",
+      "CalculationType_UNIPOLE_12_X_8",
+      "CalculationType_UNIPOLE_18_X_8"
+   ],
+   "x-unique": [
+      "location"
+   ]
+}
