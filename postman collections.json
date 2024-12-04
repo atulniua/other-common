@@ -1,0 +1,148 @@
+==To Create new employee (HRMS)==
+http://localhost:8078/egov-hrms/employees/_create
+{
+    "RequestInfo": {
+        "apiId": "Rainmaker",
+        "authToken": "edb07816-0529-454d-8803-ae81ec88e019",
+        "userInfo": {
+            "id": 339,
+            "uuid": "fa447b62-ded1-414a-8e22-debe9300dc4d",
+            "userName": "AtulHRMS",
+            "name": "Atul",
+            "mobileNumber": "7889165661",
+            "emailId": null,
+            "locale": null,
+            "type": "EMPLOYEE",
+            "roles": [
+                {
+                    "name": "Employee",
+                    "code": "EMPLOYEE",
+                    "tenantId": "pg.citya"
+                },
+                {
+                    "name": "HRMS ADMIN",
+                    "code": "HRMS_ADMIN",
+                    "tenantId": "pg.citya"
+                },
+                {
+                    "name": "Super User",
+                    "code": "SUPERUSER",
+                    "tenantId": "pg.citya"
+                }
+            ],
+            "active": true,
+            "tenantId": "pg.citya",
+            "permanentCity": null
+        },
+        "msgId": "1733286053116|en_IN",
+        "plainAccessRequest": {}
+    },
+    "Employees": [
+        {
+            "id": 340,
+            "uuid": "adf84352-a82a-4964-aee6-b5eb7ee6d7a5",
+            "code": "AST18",
+            "employeeStatus": "EMPLOYED",
+            "employeeType": "PERMANENT",
+            "dateOfAppointment": 1706832000000,
+            "jurisdictions": [
+                {
+                    "id": "3e52a7a5-ac97-4495-a4fe-6c0a85ac2849",
+                    "hierarchy": "ADMIN",
+                    "boundary": "pg.citya",
+                    "boundaryType": "City",
+                    "tenantId": "pg",
+                    "auditDetails": {
+                        "createdBy": "fa447b62-ded1-414a-8e22-debe9300dc4d",
+                        "createdDate": 1733286053412,
+                        "lastModifiedBy": "c2541e99-733d-4dfc-9379-630b6e1a9b2f",
+                        "lastModifiedDate": 1733284484783
+                    },
+                    "isActive": true
+                }
+            ],
+            "assignments": [
+                {
+                    "id": "deeb3a6e-1eb3-45f9-8138-eb645bfe94bf",
+                    "position": 89,
+                    "designation": "DESIG_01",
+                    "department": "DEPT_13",
+                    "fromDate": 1719878400000,
+                    "toDate": null,
+                    "govtOrderNumber": null,
+                    "tenantid": "pg",
+                    "reportingTo": null,
+                    "auditDetails": {
+                        "createdBy": "fa447b62-ded1-414a-8e22-debe9300dc4d",
+                        "createdDate": 1733286053412,
+                        "lastModifiedBy": "c2541e99-733d-4dfc-9379-630b6e1a9b2f",
+                        "lastModifiedDate": 1733284484783
+                    },
+                    "isHOD": false,
+                    "isCurrentAssignment": true
+                }
+            ],
+            "serviceHistory": [],
+            "education": [],
+            "tests": [],
+            "tenantId": "pg.citya",
+            "documents": [],
+            "deactivationDetails": [],
+            "reactivationDetails": [],
+            "auditDetails": {
+                "createdBy": "fa447b62-ded1-414a-8e22-debe9300dc4d",
+                "createdDate": 1733286053412,
+                "lastModifiedBy": null,
+                "lastModifiedDate": null
+            },
+            "reActivateEmployee": null,
+            "user": {
+                "id": 340,
+                "uuid": "adf84352-a82a-4964-aee6-b5eb7ee6d7a5",
+                "userName": "AST18",
+                "password": null,
+                "salutation": null,
+                "name": "Asset",
+                "gender": "MALE",
+                "mobileNumber": "9887654366",
+                "emailId": null,
+                "altContactNumber": null,
+                "pan": null,
+                "aadhaarNumber": null,
+                "permanentAddress": null,
+                "permanentCity": null,
+                "permanentPinCode": null,
+                "correspondenceCity": null,
+                "correspondencePinCode": null,
+                "correspondenceAddress": "amritsar",
+                "active": true,
+                "dob": 760147200000,
+                "pwdExpiryDate": null,
+                "locale": null,
+                "type": "EMPLOYEE",
+                "signature": null,
+                "accountLocked": null,
+                "roles": [
+                    {
+                        "name": "State Administrator",
+                        "code": "STADMIN",
+                        "description": null,
+                        "tenantId": "pg"
+                    }
+                ],
+                "fatherOrHusbandName": null,
+                "relationship": null,
+                "bloodGroup": null,
+                "identificationMark": null,
+                "photo": null,
+                "createdBy": null,
+                "createdDate": null,
+                "lastModifiedBy": null,
+                "lastModifiedDate": null,
+                "otpReference": null,
+                "tenantId": "pg"
+            },
+            "isActive": true
+        }
+    ]
+}
