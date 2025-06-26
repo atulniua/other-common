@@ -14,7 +14,7 @@ logging.basicConfig(
         logging.FileHandler('migration_debug.log'),
         logging.StreamHandler()
     ]
-)   z
+) 
 
 # Configuration
 # IMPORTANT: Update these paths and URLs as needed
@@ -22,10 +22,10 @@ EXCEL_PATH = "/Users/atul/Desktop/migrate.xlsx" # <-- Verify this path
 DB_PATH = "migration.db"
 
 # API Endpoints
-CREATE_API = "http://localhost:8021/sv-services/street-vending/_create" # <-- Verify this URL
-UPDATE_API = "http://localhost:8021/sv-services/street-vending/_update" # <-- Verify this URL
+CREATE_API = "http://localhost:8033/sv-services/street-vending/_create" # <-- Verify this URL
+UPDATE_API = "http://localhost:8033/sv-services/street-vending/_update" # <-- Verify this URL
 BILL_FETCH_API = "http://localhost:8044/billing-service/bill/v2/_fetchbill" # <-- Verify this URL - **Will use POST method**
-PAYMENT_API = "http://localhost:8033/collection-services/payments/_create" # <-- Verify this URL
+PAYMENT_API = "http://localhost:8074/collection-services/payments/_create" # <-- Verify this URL
 
 
 # IMPORTANT: Define the Authorization Bearer token here
@@ -317,7 +317,7 @@ def create_base_payload(record):
     vendor_main = {
         "applicationId": None,
         "auditDetails": None,
-        "dob": str(record.get('dob_vendor', '2000-01-01')),
+        "dob": str(record.get('dob_vendor', '')),
         "userCategory": str(record.get('userCategory', 'GEN')),
         "emailId": str(record.get('email', '')),
         "fatherName": str(record.get('fatherName', '')),
@@ -342,7 +342,7 @@ def create_base_payload(record):
         vendor_spouse = {
             "applicationId": None,
             "auditDetails": None,
-            "dob": str(record.get('dob_spouse', '2000-01-01')),
+            "dob": str(record.get('dob_spouse', '')),
             "userCategory": str(record.get('userCategory_spouse', record.get('userCategory', 'GEN'))),
             "emailId": str(record.get('email_spouse', '')),
             "specialCategory": str(record.get('specialCategory_spouse', 'NONE')),
@@ -363,7 +363,7 @@ def create_base_payload(record):
         vendor_dependent = {
             "applicationId": None,
             "auditDetails": None,
-            "dob": str(record.get('dob_dependent', '2000-01-01')),
+            "dob": str(record.get('dob_dependent', '')),
             "userCategory": str(record.get('userCategory_dependent', record.get('userCategory', 'GEN'))),
             "emailId": str(record.get('email_dependent', '')),
             "specialCategory": str(record.get('specialCategory_dependent', 'NONE')),
@@ -1206,5 +1206,3 @@ if __name__ == "__main__":
 
         except Exception as e:
             print(f"\nCould not generate summary from database: {str(e)}")
-
-
