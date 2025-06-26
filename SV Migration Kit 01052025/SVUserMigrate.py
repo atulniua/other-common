@@ -1,12 +1,13 @@
 import pandas as pd
 import requests
 import uuid
-from datetime import datetime
 import json
+from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
-# Configuration
-EXCEL_FILE_PATH = "/Users/atul/Documents/SVMigrationKit01052025/Users.xlsx"  # Path to your Excel file
-SHEET_NAME = "Sheet1"           # Sheet name in Excel
+# Constants
+EXCEL_FILE_PATH = "/Users/atul/Documents/SVMigrationKit01052025/Users.xlsx"
+SHEET_NAME = "Sheet1"
 API_URL = "http://localhost:8099/user/users/_createnovalidate"
 AUTH_TOKEN = "9d78b340-4ebc-4c66-bff7-53a764b8263d"
 ADMIN_USER_ID = 23287
@@ -15,13 +16,17 @@ ADMIN_USERNAME = "PalashS"
 ADMIN_NAME = "Palash S"
 DEFAULT_PASSWORD = "eGov@123"
 TENANT_ID = "pg.citya"
+MAX_WORKERS = 20  # Number of threads to run in parallel (tune this as needed)
+
+# Reusable session
+session = requests.Session()
+session.headers.update({"Content-Type": "application/json"})
 
 def generate_request_info():
-    """Generate the request info payload"""
     return {
         "apiId": "Rainmaker",
         "ver": ".01",
-        "ts": int(datetime.now().timestamp() * 1000),  # current timestamp in milliseconds
+        "ts": int(datetime.now().timestamp() * 1000),
         "action": "_update",
         "did": "1",
         "key": "",
@@ -33,31 +38,17 @@ def generate_request_info():
             "userName": ADMIN_USERNAME,
             "name": ADMIN_NAME,
             "mobileNumber": "9949032246",
-            "emailId": None,
             "type": "EMPLOYEE",
             "roles": [
-                {
-                    "name": "superuser",
-                    "code": "SUPERUSER",
-                    "tenantId": TENANT_ID
-                },
-                {
-                    "name": "HRMS Admin",
-                    "code": "HRMS_ADMIN",
-                    "tenantId": TENANT_ID
-                },
-                {
-                    "name": "superuser",
-                    "code": "SUPERUSER",
-                    "tenantId": "pg"
-                }
+                {"name": "superuser", "code": "SUPERUSER", "tenantId": TENANT_ID},
+                {"name": "HRMS Admin", "code": "HRMS_ADMIN", "tenantId": TENANT_ID},
+                {"name": "superuser", "code": "SUPERUSER", "tenantId": "pg"}
             ],
             "tenantId": TENANT_ID
         }
     }
 
 def create_user_payload(name, mobile_number):
-    """Create the user payload for the API"""
     return {
         "userName": mobile_number,
         "name": name,
@@ -66,67 +57,54 @@ def create_user_payload(name, mobile_number):
         "type": "CITIZEN",
         "active": True,
         "password": DEFAULT_PASSWORD,
-        "roles": [
-            {
-                "code": "CITIZEN",
-                "name": "Citizen",
-                "tenantId": TENANT_ID
-            }
-        ],
+        "roles": [{
+            "code": "CITIZEN",
+            "name": "Citizen",
+            "tenantId": TENANT_ID
+        }],
         "tenantId": TENANT_ID
     }
 
+def send_user_creation_request(name, mobile_number):
+    payload = {
+        "requestInfo": generate_request_info(),
+        "user": create_user_payload(name, mobile_number)
+    }
+    try:
+        response = session.post(API_URL, data=json.dumps(payload))
+        if response.status_code == 200:
+            return (True, f"Success: {name} ({mobile_number})")
+        else:
+            return (False, f"Failed: {name} ({mobile_number}) => {response.status_code} - {response.text}")
+    except Exception as e:
+        return (False, f"Error: {name} ({mobile_number}) => {e}")
+
 def migrate_users():
-    # Read Excel file
     try:
         df = pd.read_excel(EXCEL_FILE_PATH, sheet_name=SHEET_NAME)
     except Exception as e:
-        print(f"Error reading Excel file: {e}")
+        print(f"Error reading Excel: {e}")
         return
-    
-    # Check required columns
+
     if "name" not in df.columns or "mobile_number" not in df.columns:
         print("Excel file must contain 'name' and 'mobile_number' columns")
         return
-    
-    # Prepare headers
-    headers = {
-        "Content-Type": "application/json"
-    }
-    
-    success_count = 0
-    failure_count = 0
-    
-    for index, row in df.iterrows():
-        name = str(row["name"]).strip()
-        mobile_number = str(row["mobile_number"]).strip()
-        
-        # Skip empty rows
-        if not name or not mobile_number:
-            continue
-            
-        # Prepare payload
-        payload = {
-            "requestInfo": generate_request_info(),
-            "user": create_user_payload(name, mobile_number)
-        }
-        
-        try:
-            # Make API request
-            response = requests.post(API_URL, headers=headers, data=json.dumps(payload))
-            
-            if response.status_code == 200:
-                print(f"Successfully migrated user: {name} ({mobile_number})")
-                success_count += 1
+
+    users = [(str(row["name"]).strip(), str(row["mobile_number"]).strip())
+             for _, row in df.iterrows() if str(row["name"]).strip() and str(row["mobile_number"]).strip()]
+
+    success, fail = 0, 0
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        futures = [executor.submit(send_user_creation_request, name, mobile) for name, mobile in users]
+        for future in as_completed(futures):
+            ok, message = future.result()
+            print(message)
+            if ok:
+                success += 1
             else:
-                print(f"Failed to migrate user {name} ({mobile_number}). Status code: {response.status_code}, Response: {response.text}")
-                failure_count += 1
-                
-        except Exception as e:
-            print(f"Error migrating user {name} ({mobile_number}): {e}")
-            failure_count += 1
-    
-    print(f"\nMigration complete. Success: {success_count}, Failures: {failure_count}")
+                fail += 1
+
+    print(f"\n✅ Migration Complete — Success: {success}, Failures: {fail}")
 
 if __name__ == "__main__":
     migrate_users()
