@@ -674,6 +674,7 @@ def fetch_bill_details(application_no, tenant_id, application_date):
             return None, None
 
     except requests.exceptions.Timeout:
+        print(f"BILL ERROR: {application_no} - Request timed out")
         logging.error(f"Bill fetch API request timed out for {application_no}.")
         return None, None
     except requests.exceptions.RequestException as e:
@@ -682,9 +683,13 @@ def fetch_bill_details(application_no, tenant_id, application_date):
             try:
                  error_response_text = e.response.text
                  error_message += f" | Response: {error_response_text}"
+                 print(f"BILL ERROR: {application_no} - HTTP {e.response.status_code}: {error_response_text[:200]}")
                  logging.error(f"Bill Fetch Failure Details: {error_response_text}")
             except:
                 error_message += " | Could not parse error response text."
+                print(f"BILL ERROR: {application_no} - {str(e)}")
+        else:
+            print(f"BILL ERROR: {application_no} - {str(e)}")
         logging.error(error_message)
         return None, None
     except json.JSONDecodeError:
@@ -769,6 +774,7 @@ def collect_payment(application_no, bill_id, total_amount_due, tenant_id, vendor
         response.raise_for_status()
         return response.json()
     except requests.exceptions.Timeout:
+        print(f"PAYMENT ERROR: {application_no} - Request timed out")
         logging.error("Payment API request timed out.")
         raise
     except requests.exceptions.RequestException as e:
@@ -777,9 +783,13 @@ def collect_payment(application_no, bill_id, total_amount_due, tenant_id, vendor
             try:
                  error_response_text = e.response.text
                  error_message += f" | Response: {error_response_text}"
+                 print(f"PAYMENT ERROR: {application_no} - HTTP {e.response.status_code}: {error_response_text[:200]}")
                  logging.error(f"Payment Failure Details: {error_response_text}")
             except:
                  error_message += " | Could not parse error response text."
+                 print(f"PAYMENT ERROR: {application_no} - {str(e)}")
+        else:
+            print(f"PAYMENT ERROR: {application_no} - {str(e)}")
         raise requests.exceptions.RequestException(error_message) from e
 
 
@@ -916,6 +926,7 @@ def process_excel():
             except requests.exceptions.Timeout:
                  create_status = 'CREATE_TIMEOUT'
                  error_message = "Create API request timed out."
+                 print(f"CREATE ERROR: {name} ({mobile}) - {error_message}")
                  logging.error(f"{create_status} for {name} | Mobile: {mobile}: {error_message}")
                  update_log_in_db(mobile, tenant_id, create_status=create_status, error=error_message)
                  continue # Move to next record
@@ -926,9 +937,13 @@ def process_excel():
                     try:
                         error_response_text = e.response.text
                         error_message += f" | Response: {error_response_text}"
+                        print(f"CREATE ERROR: {name} ({mobile}) - HTTP {e.response.status_code}: {error_response_text[:200]}")
                         logging.error(f"Create Failure Details: {error_response_text}")
                     except:
                         error_message += " | Could not parse error response text."
+                        print(f"CREATE ERROR: {name} ({mobile}) - {str(e)}")
+                else:
+                    print(f"CREATE ERROR: {name} ({mobile}) - {str(e)}")
                 logging.error(f"{create_status} for {name} | Mobile: {mobile}: {error_message}")
                 update_log_in_db(mobile, tenant_id, create_status=create_status, error=error_message)
                 continue # Move to next record
@@ -1005,6 +1020,7 @@ def process_excel():
                 except requests.exceptions.Timeout:
                     update_status = 'UPDATE_TIMEOUT'
                     error_message = "Update API request timed out."
+                    print(f"UPDATE ERROR: {name} ({mobile}) - {error_message}")
                     logging.error(f"{update_status} for {name} | App No: {application_no}: {error_message}")
                     update_log_in_db(mobile, tenant_id, update_status=update_status, error=error_message)
                     continue # Move to next record
@@ -1015,9 +1031,13 @@ def process_excel():
                         try:
                              error_response_text = e.response.text
                              error_message += f" | Response: {error_response_text}"
+                             print(f"UPDATE ERROR: {name} ({mobile}) - HTTP {e.response.status_code}: {error_response_text[:200]}")
                              logging.error(f"Update Failure Details: {error_response_text}")
                         except:
                             error_message += " | Could not parse error response text."
+                            print(f"UPDATE ERROR: {name} ({mobile}) - {str(e)}")
+                    else:
+                        print(f"UPDATE ERROR: {name} ({mobile}) - {str(e)}")
                     logging.error(f"{update_status} for {name} | App No: {application_no}: {error_message}")
                     update_log_in_db(mobile, tenant_id, update_status=update_status, error=error_message)
                     continue # Move to next record
@@ -1059,18 +1079,10 @@ def process_excel():
         if bill_fetch_status == 'BILL_FETCH_SUCCESS' and payment_status == 'NOT_ATTEMPTED' and application_no and bill_id and total_amount_due is not None:
              try:
                  payment_response = collect_payment(application_no, bill_id, total_amount_due, tenant_id, name, mobile)
-                 # **IMPORTANT: Verify the response structure and status after payment**
-                 # Check if payment was successful based on the API response
-                 payment_data = payment_response.get('Payment', {}) # Your curl shows a single Payment object
-                 if payment_data and payment_data.get('paymentStatus') == 'PAID': # Or whatever the success status is
-                     payment_status = 'PAYMENT_SUCCESS'
-                     logging.info(f"PAYMENT_SUCCESS for {name} | App No: {application_no}, Bill ID: {bill_id}")
-                     update_log_in_db(mobile, tenant_id, payment_status=payment_status)
-                 else:
-                     payment_status = 'PAYMENT_FAILED'
-                     error_message = "Payment API success, but payment status is not PAID or details missing in response."
-                     logging.error(f"{payment_status} for {name} | App No: {application_no}, Bill ID: {bill_id}: {error_message}")
-                     update_log_in_db(mobile, tenant_id, payment_status=payment_status, error=error_message)
+                 # Payment API call successful - treat as completed
+                 payment_status = 'PAYMENT_SUCCESS'
+                 print(f"Migration completed: {name} - App No: {application_no}")
+                 update_log_in_db(mobile, tenant_id, payment_status=payment_status)
 
              except requests.exceptions.Timeout:
                  payment_status = 'PAYMENT_TIMEOUT'
@@ -1245,6 +1257,14 @@ if __name__ == "__main__":
                 cursor.execute("SELECT vendor_name, mobile_no, tenant_id, create_status, update_status, bill_fetch_status, payment_status, application_no, bill_id, total_amount_due, error FROM migration_log WHERE error IS NOT NULL OR payment_status != 'PAYMENT_SUCCESS'")
                 incomplete_or_error_records = cursor.fetchall()
                 if incomplete_or_error_records:
+                    print("\nRecords with Errors or Incomplete Migration:")
+                    print("==============================================")
+                    for name, mobile, tenant, c_status, u_status, bf_status, p_status, app_no, bill_id_log, amount, err in incomplete_or_error_records:
+                        print(f"- {name} ({mobile}) | Tenant: {tenant} | AppNo: {app_no} | BillId: {bill_id_log} | Amount: {amount} | Create: {c_status} | Update: {u_status} | Bill Fetch: {bf_status} | Payment: {p_status} | Error: {err if err else 'None'}")
+
+        except Exception as e:
+            print(f"\nCould not generate summary from database: {str(e)}")
+            if incomplete_or_error_records:
                     print("\nRecords with Errors or Incomplete Migration:")
                     print("==============================================")
                     for name, mobile, tenant, c_status, u_status, bf_status, p_status, app_no, bill_id_log, amount, err in incomplete_or_error_records:
