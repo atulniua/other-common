@@ -19,6 +19,7 @@ EXCEL_PATH = "/Users/atul/Desktop/migrate.xlsx" # <-- Verify this path
 DB_PATH = "migration.db"
 
 # API Endpoints
+USER_CREATE_API = "http://localhost:8099/user/users/_createnovalidate"
 CREATE_API = "http://localhost:8033/sv-services/street-vending/_create" # <-- Verify this URL
 UPDATE_API = "http://localhost:8033/sv-services/street-vending/_update" # <-- Verify this URL
 BILL_FETCH_API = "http://localhost:8044/billing-service/bill/v2/_fetchbill" # <-- Verify this URL - **Will use POST method**
@@ -27,6 +28,7 @@ PAYMENT_API = "http://localhost:8074/collection-services/payments/_create" # <--
 
 # IMPORTANT: Define the Authorization Bearer token here
 AUTH_TOKEN = "a00d5ebb-9559-404f-a0ef-aadc3019510c" # <-- Use the provided token
+USER_AUTH_TOKEN = "9d78b340-4ebc-4c66-bff7-53a764b8263d" # User service token
 
 # IMPORTANT: Use the exact user details from your successful API calls
 
@@ -84,6 +86,18 @@ CITIZEN_REQUEST_USER_INFO = {
     "permanentCity": None
 }
 
+# Admin user for user creation
+ADMIN_USER_INFO = {
+    "id": 23287,
+    "uuid": "4632c941-cb1e-4b83-b2d4-200022c1a137",
+    "userName": "PalashS",
+    "name": "Palash S",
+    "mobileNumber": "9949032246",
+    "type": "EMPLOYEE",
+    "roles": [{"name": "superuser", "code": "SUPERUSER", "tenantId": "pg.citya"}],
+    "tenantId": "pg.citya"
+}
+
 # Define common headers. Add more headers if needed based on UI network traffic analysis.
 HEADERS = {
     "accept": "application/json",
@@ -118,6 +132,7 @@ def init_db():
                     vendor_name TEXT,
                     mobile_no TEXT,
                     tenant_id TEXT,
+                    user_create_status TEXT DEFAULT 'NOT_ATTEMPTED',
                     create_status TEXT DEFAULT 'NOT_ATTEMPTED',
                     update_status TEXT DEFAULT 'NOT_ATTEMPTED',
                     bill_fetch_status TEXT DEFAULT 'NOT_ATTEMPTED',
@@ -171,6 +186,36 @@ def update_log_in_db(mobile_no, tenant_id, **kwargs):
     except Exception as db_err:
         logging.error(f"Failed to update log in database for {mobile_no}/{tenant_id}: {db_err}")
 
+
+def create_user(name, mobile):
+    """Create user using user migration kit logic"""
+    payload = {
+        "requestInfo": {
+            "apiId": "Rainmaker",
+            "ver": ".01",
+            "ts": int(time.time() * 1000),
+            "action": "_update",
+            "authToken": USER_AUTH_TOKEN,
+            "userInfo": ADMIN_USER_INFO,
+            "msgId": f"{int(time.time())}|en_IN"
+        },
+        "user": {
+            "userName": mobile,
+            "name": name,
+            "mobileNumber": mobile,
+            "type": "CITIZEN",
+            "active": True,
+            "password": "eGov@123",
+            "roles": [{"code": "CITIZEN", "name": "Citizen", "tenantId": "pg.citya"}],
+            "tenantId": "pg.citya"
+        }
+    }
+    
+    try:
+        response = requests.post(USER_CREATE_API, headers={"Content-Type": "application/json"}, json=payload, timeout=15)
+        return response.status_code == 200
+    except:
+        return False
 
 def create_base_payload(record):
     """Create payload matching the exact API requirements for the _create endpoint"""
@@ -771,6 +816,12 @@ def process_excel():
             continue
 
         logging.info(f"Processing record {index + 1}: {name} ({mobile}) | Tenant: {tenant_id}")
+        
+        # Step 0: Create User first
+        if create_user(name, mobile):
+            print(f"User created: {name} ({mobile})")
+        else:
+            print(f"User creation failed: {name} ({mobile}) - continuing anyway")
 
         # Check if record already exists in log for resuming
         conn = sqlite3.connect(DB_PATH)
@@ -824,7 +875,7 @@ def process_excel():
                  pass # Proceed to create step
 
 
-        # --- Step 1: Create Street Vendor Application ---
+        # --- Step 1: Create Street Vendor Application (after user creation) ---
         if create_status == 'NOT_ATTEMPTED':
             try:
                 create_payload = create_base_payload(record)
