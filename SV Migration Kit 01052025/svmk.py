@@ -212,10 +212,13 @@ def create_user(name, mobile):
     }
     
     try:
-        response = requests.post(USER_CREATE_API, headers={"Content-Type": "application/json"}, json=payload, timeout=15)
-        return response.status_code == 200
-    except:
-        return False
+        response = requests.post(USER_CREATE_API, headers={"Content-Type": "application/json"}, json=payload, timeout=7)
+        if response.status_code == 200:
+            return True, "Success"
+        else:
+            return False, f"HTTP {response.status_code}: {response.text[:100]}"
+    except Exception as e:
+        return False, f"Error: {str(e)[:50]}"
 
 def create_base_payload(record):
     """Create payload matching the exact API requirements for the _create endpoint"""
@@ -818,10 +821,12 @@ def process_excel():
         logging.info(f"Processing record {index + 1}: {name} ({mobile}) | Tenant: {tenant_id}")
         
         # Step 0: Create User first
-        if create_user(name, mobile):
+        user_success, user_error = create_user(name, mobile)
+        if user_success:
             print(f"User created: {name} ({mobile})")
         else:
-            print(f"User creation failed: {name} ({mobile}) - continuing anyway")
+            print(f"User creation failed: {name} ({mobile}) - {user_error} - skipping to next record")
+            continue  # Skip to next record if user creation fails
 
         # Check if record already exists in log for resuming
         conn = sqlite3.connect(DB_PATH)
