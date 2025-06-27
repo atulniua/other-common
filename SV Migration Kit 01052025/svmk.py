@@ -6,14 +6,11 @@ import sqlite3
 import json
 from datetime import datetime
 
-# Configure logging
+# Configure logging - minimal for performance
 logging.basicConfig(
-    level=logging.DEBUG, # Keep DEBUG for detailed logs during development
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('migration_debug.log'),
-        logging.StreamHandler()
-    ]
+    level=logging.ERROR, # Only errors
+    format='%(message)s',
+    handlers=[logging.StreamHandler()]
 ) 
 
 # Configuration
@@ -594,7 +591,7 @@ def fetch_bill_details(application_no, tenant_id, application_date):
              headers=HEADERS,
              params=query_params,
              json=request_body,
-             timeout=30
+             timeout=7
         )
         response.raise_for_status()
         bill_data = response.json()
@@ -720,7 +717,7 @@ def collect_payment(application_no, bill_id, total_amount_due, tenant_id, vendor
 
     try:
         # Pass tenantId as a query parameter as seen in your curl
-        response = requests.post(PAYMENT_API, headers=HEADERS, json=payment_payload, params={"tenantId": tenant_id}, timeout=30)
+        response = requests.post(PAYMENT_API, headers=HEADERS, json=payment_payload, params={"tenantId": tenant_id}, timeout=7)
         response.raise_for_status()
         return response.json()
     except requests.exceptions.Timeout:
@@ -831,7 +828,7 @@ def process_excel():
         if create_status == 'NOT_ATTEMPTED':
             try:
                 create_payload = create_base_payload(record)
-                create_response = requests.post(CREATE_API, headers=HEADERS, json=create_payload, timeout=60)
+                create_response = requests.post(CREATE_API, headers=HEADERS, json=create_payload, timeout=7)
                 create_response.raise_for_status()
                 create_response_data = create_response.json()
 
@@ -905,8 +902,8 @@ def process_excel():
                  # Continue to the next step if it doesn't require sv_detail (Bill Fetch/Payment might only need application_no)
             else: # We have the sv_detail object
                 try:
-                    # Add a small delay before update
-                    time.sleep(2)
+                    # Remove delay for speed
+                    pass
 
                     update_payload = create_update_payload(sv_detail)
 
@@ -919,7 +916,7 @@ def process_excel():
 
                     logging.debug(f"Record {index + 1} - Update Payload:\n{json.dumps(update_payload, indent=2)}")
 
-                    update_response = requests.post(UPDATE_API, headers=HEADERS, json=update_payload, timeout=60)
+                    update_response = requests.post(UPDATE_API, headers=HEADERS, json=update_payload, timeout=7)
                     update_response.raise_for_status()
                     update_response_data = update_response.json()
 
@@ -1049,8 +1046,8 @@ def process_excel():
              logging.debug(f"Skipping payment for {name} ({mobile}) as bill fetch was not successful (status: {bill_fetch_status}).")
 
 
-        # Add a small delay between records
-        time.sleep(1)
+        # Remove delay for speed
+        pass
 
 
 def verify_api_connectivity(url, method="POST"): # Default to POST
@@ -1083,11 +1080,11 @@ def verify_api_connectivity(url, method="POST"): # Default to POST
                        "paymentDetails": [{"businessService": "sv-services", "billId": "placeholder", "totalAmountPaid": 1}]
                   }
 
-             response = requests.post(url, headers=HEADERS, json=test_payload, timeout=10)
+             response = requests.post(url, headers=HEADERS, json=test_payload, timeout=7)
         elif method.upper() == "GET":
              # For GET, include some basic query params if possible, otherwise just send body
              query_params = {"tenantId": "pg.citya"} # Example query param
-             response = requests.get(url, headers=HEADERS, params=query_params, json=test_payload, timeout=10)
+             response = requests.get(url, headers=HEADERS, params=query_params, json=test_payload, timeout=7)
         else:
             logging.warning(f"Unsupported method '{method}' for connectivity test.")
             return False
@@ -1126,15 +1123,8 @@ if __name__ == "__main__":
     print("=== Street Vendor Migration ===")
     start = time.time()
 
-    print("Verifying API connectivity...")
-    # Use POST method for connectivity check where appropriate
-    # FIX: Change Bill Fetch connectivity check to POST
-    create_api_reachable = verify_api_connectivity(CREATE_API, method="POST")
-    update_api_reachable = verify_api_connectivity(UPDATE_API, method="POST")
-    bill_fetch_api_reachable = verify_api_connectivity(BILL_FETCH_API, method="POST") # Bill fetch is POST
-    payment_api_reachable = verify_api_connectivity(PAYMENT_API, method="POST") # Payment is POST
-
-    api_reachable = create_api_reachable and update_api_reachable and bill_fetch_api_reachable and payment_api_reachable
+    # Skip API connectivity check for speed
+    pass
 
 
 
