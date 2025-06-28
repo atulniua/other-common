@@ -16,6 +16,7 @@ logging.basicConfig(
 # Configuration
 # IMPORTANT: Update these paths and URLs as needed
 EXCEL_PATH = "/Users/atul/Desktop/migrate.xlsx" # <-- Verify this path
+CSV_STATUS_PATH = "/Users/atul/Desktop/migrate_status.csv" # Real-time status file
 DB_PATH = "migration.db"
 
 # API Endpoints
@@ -187,8 +188,45 @@ def update_log_in_db(mobile_no, tenant_id, **kwargs):
         logging.error(f"Failed to update log in database for {mobile_no}/{tenant_id}: {db_err}")
 
 
+def update_excel_status(mobile_no, status, error_msg=None):
+    """Update migration status in Excel file"""
+    try:
+        df = pd.read_excel(EXCEL_PATH)
+        
+        # Ensure status columns exist
+        if 'migrationStatus' not in df.columns:
+            df['migrationStatus'] = 'NOT_STARTED'
+        if 'errorDetails' not in df.columns:
+            df['errorDetails'] = ''
+            
+        # Convert to object type to avoid dtype warnings
+        df['migrationStatus'] = df['migrationStatus'].astype('object')
+        df['errorDetails'] = df['errorDetails'].astype('object')
+        
+        # Find matching row
+        try:
+            mobile_int = int(mobile_no)
+            mask = df['mobileNo'] == mobile_int
+        except:
+            mask = df['mobileNo'].astype(str) == str(mobile_no)
+            
+        if mask.any():
+            df.loc[mask, 'migrationStatus'] = str(status)
+            if error_msg:
+                df.loc[mask, 'errorDetails'] = str(error_msg)[:100]
+            df.to_excel(EXCEL_PATH, index=False)
+            # Also save as CSV for real-time viewing
+            csv_path = EXCEL_PATH.replace('.xlsx', '_status.csv')
+            df[['name', 'mobileNo', 'migrationStatus', 'errorDetails']].to_csv(csv_path, index=False)
+            print(f"✓ {mobile_no}: {status}")
+        else:
+            print(f"Mobile {mobile_no} not found in Excel")
+    except Exception as e:
+        print(f"Excel update error: {e}")
+
 def create_user(name, mobile):
     """Create user using user migration kit logic"""
+    
     payload = {
         "requestInfo": {
             "apiId": "Rainmaker",
@@ -218,7 +256,7 @@ def create_user(name, mobile):
         else:
             return False, f"HTTP {response.status_code}: {response.text[:100]}"
     except Exception as e:
-        return False, f"Error: {str(e)[:50]}"
+        return False, str(e), f"Error: {str(e)[:50]}"
 
 def create_base_payload(record):
     """Create payload matching the exact API requirements for the _create endpoint"""
@@ -830,12 +868,17 @@ def process_excel():
 
         logging.info(f"Processing record {index + 1}: {name} ({mobile}) | Tenant: {tenant_id}")
         
+        # Update status at start
+        update_excel_status(mobile, "STARTING")
+        
         # Step 0: Create User first
         user_success, user_error = create_user(name, mobile)
         if user_success:
             print(f"User created: {name} ({mobile})")
+            update_excel_status(mobile, "USER_CREATED")
         else:
             print(f"User creation failed: {name} ({mobile}) - {user_error} - skipping to next record")
+            update_excel_status(mobile, "USER_FAILED", str(user_error)[:100])
             continue  # Skip to next record if user creation fails
 
         # Check if record already exists in log for resuming
@@ -910,17 +953,20 @@ def process_excel():
                         logging.info(f"CREATE_SUCCESS for {name} | App ID: {application_id}, App No: {application_no}")
                         # Update log with success status, IDs, and application_date
                         update_log_in_db(mobile, tenant_id, create_status=create_status, application_id=application_id, application_no=application_no, application_date=application_date)
+                        update_excel_status(mobile, "CREATED")
                     else:
                         create_status = 'CREATE_SUCCESS_NO_ID'
                         error_message = "Create API success, but application ID, No, or Date missing in SVDetail object."
                         logging.error(f"{create_status} for {name} | Mobile: {mobile}: {error_message}")
                         update_log_in_db(mobile, tenant_id, create_status=create_status, error=error_message)
+                        update_excel_status(mobile, "CREATE_FAILED", error_message)
                         continue # Move to next record
                 else:
                     create_status = 'CREATE_SUCCESS_NO_SVDETAIL'
                     error_message = "Create API success, but SVDetail object missing or not a dictionary in response."
                     logging.error(f"{create_status} for {name} | Mobile: {mobile}: {error_message}")
                     update_log_in_db(mobile, tenant_id, create_status=create_status, error=error_message)
+                    update_excel_status(mobile, "CREATE_FAILED", error_message)
                     continue # Move to next record
 
             except requests.exceptions.Timeout:
@@ -929,6 +975,7 @@ def process_excel():
                  print(f"CREATE ERROR: {name} ({mobile}) - {error_message}")
                  logging.error(f"{create_status} for {name} | Mobile: {mobile}: {error_message}")
                  update_log_in_db(mobile, tenant_id, create_status=create_status, error=error_message)
+                 update_excel_status(mobile, "CREATE_FAILED", error_message[:100])
                  continue # Move to next record
             except requests.exceptions.RequestException as e:
                 create_status = 'CREATE_FAILED'
@@ -1003,11 +1050,13 @@ def process_excel():
                              update_status = 'UPDATE_SUCCESS'
                              logging.info(f"UPDATE_SUCCESS (Approved) for {name} | App No: {application_no}")
                              update_log_in_db(mobile, tenant_id, update_status=update_status)
+                             update_excel_status(mobile, "APPROVED")
                         else:
                              update_status = 'UPDATE_FAILED'
                              error_message = f"Update API success, but application status is '{updated_status}' instead of 'APPROVED'."
                              logging.error(f"{update_status} for {name} | App No: {application_no}: {error_message}")
                              update_log_in_db(mobile, tenant_id, update_status=update_status, error=error_message)
+                             update_excel_status(mobile, "UPDATE_FAILED", error_message)
                              continue # Continue to next record if update failed, payment won't work
                     else:
                         update_status = 'UPDATE_FAILED'
@@ -1015,6 +1064,7 @@ def process_excel():
                         error_message = "Update API success, but 'SVDetail' object missing or not a dictionary in response."
                         logging.error(f"{update_status} for {name} | App No: {application_no}: {error_message}")
                         update_log_in_db(mobile, tenant_id, update_status=update_status, error=error_message)
+                        update_excel_status(mobile, "UPDATE_FAILED", error_message)
                         continue
 
                 except requests.exceptions.Timeout:
@@ -1064,10 +1114,12 @@ def process_excel():
                 bill_fetch_status = 'BILL_FETCH_FAILED'
                 # fetch_bill_details logs errors internally
                 update_log_in_db(mobile, tenant_id, bill_fetch_status=bill_fetch_status, error="Failed to fetch bill details.")
+                update_excel_status(mobile, "BILL_FAILED", "Failed to fetch bill details")
                 continue # Cannot proceed without bill details
             else:
                 bill_fetch_status = 'BILL_FETCH_SUCCESS'
                 update_log_in_db(mobile, tenant_id, bill_fetch_status=bill_fetch_status, bill_id=bill_id, total_amount_due=total_amount_due)
+                update_excel_status(mobile, "BILL_READY")
         elif update_status != 'UPDATE_SUCCESS' and bill_fetch_status == 'NOT_ATTEMPTED':
              logging.debug(f"Skipping bill fetch for {name} ({mobile}) as update was not successful (status: {update_status}).")
         # If bill_fetch_status is already successful, bill_id and total_amount_due are loaded from the database log.
@@ -1083,12 +1135,14 @@ def process_excel():
                  payment_status = 'PAYMENT_SUCCESS'
                  print(f"Migration completed: {name} - App No: {application_no}")
                  update_log_in_db(mobile, tenant_id, payment_status=payment_status)
+                 update_excel_status(mobile, "SUCCESS")
 
              except requests.exceptions.Timeout:
                  payment_status = 'PAYMENT_TIMEOUT'
                  error_message = "Payment API request timed out."
                  logging.error(f"{payment_status} for {name} | App No: {application_no}, Bill ID: {bill_id}: {error_message}")
                  update_log_in_db(mobile, tenant_id, payment_status=payment_status, error=error_message)
+                 update_excel_status(mobile, "PAYMENT_FAILED", error_message)
              except requests.exceptions.RequestException as e:
                  payment_status = 'PAYMENT_FAILED'
                  error_message = f"Payment API Request Error: {str(e)}"
@@ -1101,11 +1155,13 @@ def process_excel():
                           error_message += " | Could not parse error response text."
                  logging.error(f"{payment_status} for {name} | App No: {application_no}, Bill ID: {bill_id}: {error_message}")
                  update_log_in_db(mobile, tenant_id, payment_status=payment_status, error=error_message)
+                 update_excel_status(mobile, "PAYMENT_FAILED", error_message[:100])
              except Exception as e:
                   payment_status = 'PAYMENT_FAILED'
                   error_message = f"Unexpected error during payment: {str(e)}"
                   logging.error(f"{payment_status} for {name} | App No: {application_no}, Bill ID: {bill_id}: {error_message}", exc_info=True)
                   update_log_in_db(mobile, tenant_id, payment_status=payment_status, error=error_message)
+                  update_excel_status(mobile, "PAYMENT_FAILED", error_message[:100])
 
         elif bill_fetch_status == 'BILL_FETCH_SUCCESS' and payment_status == 'NOT_ATTEMPTED':
              logging.warning(f"Skipping payment for {name} ({mobile}) due to missing application_no, bill ID or amount (should not happen if bill fetch was successful).")
