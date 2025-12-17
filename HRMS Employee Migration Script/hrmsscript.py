@@ -95,11 +95,6 @@ for index, row in df.iterrows():
                     "dob": dob,
                     "roles": [
                         {
-                            "code": "EMPLOYEE",
-                            "name": "Employee",
-                            "tenantId": tenant_id
-                        },
-                        {
                             "code": "ASSET_INITIATOR",
                             "name": "Asset Initiator Employee",
                             "tenantId": tenant_id
